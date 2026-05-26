@@ -6,11 +6,9 @@ import { AlbumGrid } from './features/album/components/AlbumGrid';
 import { NewsletterForm } from './features/newsletter/components/NewsletterForm';
 import { ChatWidget } from './components/ChatWidget';
 import { AdminCMS } from './features/admin/components/AdminCMS';
+import { usePortfolio } from './features/home/hooks/usePortfolio'; // Importando o buscador real
 import { Toaster } from 'sonner';
 
-// ============================================================================
-// MOCKS DE DADOS COMPATÍVEIS (Amostra Estática para a Home)
-// ============================================================================
 const mockSlides = [
   { 
     id: '1', 
@@ -26,43 +24,16 @@ const mockSlides = [
   }
 ];
 
-const mockPhotosHome = [
-  { 
-    id: 'a', 
-    url: 'https://images.unsplash.com/photo-1591604466107-ec97de577aff?q=80&w=1000', 
-    alt: 'Maternidade minimalista', 
-    aspectRatio: 'vertical' as const 
-  },
-  { 
-    id: 'b', 
-    url: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?q=80&w=1200', 
-    alt: 'Casamento editorial', 
-    aspectRatio: 'horizontal' as const 
-  },
-  { 
-    id: 'c', 
-    url: 'https://images.unsplash.com/photo-1606800052052-a08af7148866?q=80&w=800', 
-    alt: 'Retrato intimista de estúdio', 
-    aspectRatio: 'square' as const 
-  },
-  { 
-    id: 'd', 
-    url: 'https://images.unsplash.com/photo-1508921912186-1d1a45ebb3c1?q=80&w=800', 
-    alt: 'Luz natural de fim de tarde', 
-    aspectRatio: 'vertical' as const 
-  }
-];
-
 export default function App() {
-  // Gerenciador reativo da tela ativa atual ('home' | 'admin')
   const [currentView, setCurrentView] = useState<string>('home');
+  
+  // Puxando as fotos reais e o estado de carregamento do banco de dados
+  const { photos, loading } = usePortfolio();
 
   return (
     <Layout setView={setCurrentView} currentView={currentView}>
-      {/* Provedor global invisível de toasts flutuantes */}
       <Toaster position="bottom-right" />
       
-      {/* FLUXO A: RENDERIZAÇÃO DA HOME PAGE PÚBLICA */}
       {currentView === 'home' && (
         <div className="animate-[fadeIn_0.4s_ease-out]">
           <HeroCarousel slides={mockSlides} />
@@ -72,26 +43,45 @@ export default function App() {
             imageRight="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=600"
           />
           
-          {/* Divisor estético entre o manifesto e as mídias */}
           <div className="text-center mt-12 -mb-8">
             <span className="text-[9px] uppercase tracking-[0.3em] text-ink-secondary block">Espectro Visual</span>
             <h2 className="font-serif text-2xl md:text-3xl text-ink-primary font-light mt-1">Trabalhos em Destaque</h2>
             <div className="h-[1px] w-8 bg-ink-primary/20 mx-auto mt-4" />
           </div>
 
-          <AlbumGrid photos={mockPhotosHome} />
+          {/* LÓGICA DE EXIBIÇÃO DINÂMICA */}
+          {loading ? (
+            <div className="text-center py-24 text-xs uppercase tracking-widest text-ink-secondary">
+              Carregando Curadoria...
+            </div>
+          ) : photos.length > 0 ? (
+            // Se houver fotos no Supabase, exibe a grade real
+            <AlbumGrid photos={photos} />
+          ) : (
+            // Se o banco estiver vazio (primeiro acesso)
+            <div className="text-center py-24 px-6 border border-dashed border-ink-border max-w-4xl mx-auto my-16 rounded-subtle bg-canvas-off">
+              <p className="text-xs uppercase tracking-widest text-ink-secondary">
+                Nenhum registro público no momento.
+              </p>
+              <button 
+                onClick={() => setCurrentView('admin')}
+                className="mt-4 text-[10px] uppercase tracking-widest bg-ink-primary text-canvas-pure px-4 py-2 rounded-subtle"
+              >
+                Acessar Painel e Publicar Fotos
+              </button>
+            </div>
+          )}
+
           <NewsletterForm />
         </div>
       )}
 
-      {/* FLUXO B: RENDERIZAÇÃO DO CURADORIA (CMS) COM LOGIN EMBUTIDO */}
       {currentView === 'admin' && (
         <div className="pt-8">
           <AdminCMS />
         </div>
       )}
 
-      {/* Widget Flutuante de Mensagens Fixo em Ambas as Telas */}
       <ChatWidget />
     </Layout>
   );
