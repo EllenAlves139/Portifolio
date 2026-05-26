@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Reset sutil para manter a estética fluida de portfólio */
+body {
+  margin: 0;
+  background-color: #FFFFFF;
+  color: #1A1C1C;
+}
